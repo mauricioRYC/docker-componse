@@ -35,7 +35,7 @@ services:
   
   identificador:
     image: identificador:latest
-    container_name: identificador_pull
+    container_name: identificador_pull_node
     ports:
       - "8088:8087"
     environment:
