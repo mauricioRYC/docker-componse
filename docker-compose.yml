@@ -10,7 +10,7 @@ networks:
 services:
   postgres-test:
     image: postgres:latest
-    container_name: postgres-test
+    container_name: postgres-test-git
     environment:
       - POSTGRES_PASSWORD=mypassword
     volumes:
