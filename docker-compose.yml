@@ -1,11 +1,11 @@
 version: '3.8'
 networks:
-  my_net_api_test:
+  my_net_git:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.19.0.0/16
-          gateway: 172.19.0.1
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
 
 services:
   postgres-test:
@@ -17,8 +17,8 @@ services:
       - postgres_volume:/var/lib/postgresql/data
     restart: always
     networks:
-      my_net_api_test:
-        ipv4_address: 172.19.0.2
+      my_net_git:
+        ipv4_address: 172.20.0.2
 
   img:
     image: img:lts
@@ -30,8 +30,8 @@ services:
       - HOST=0.0.0.0
     restart: always
     networks:
-      my_net_api_test:
-        ipv4_address: 172.19.0.3
+      my_net_git:
+        ipv4_address: 172.20.0.3
   
   identificador:
     image: iden:lts
@@ -52,17 +52,17 @@ services:
       - LIMIT_TIME=200800
       - BOT="TESTEO XD"
       - DB_DATABASE=identificador_test
-      - DB_HOST=172.19.0.2
+      - DB_HOST=172.20.0.2
       - DB_PORT=5432
       - DB_USERNAME=postgres
       - DB_PASSWORD=mypassword
-      - API_NACIMIENTO=http://172.19.0.9:8090
+      - API_NACIMIENTO=http://172.20.0.9:8090
       - API_DEFUNCION=http://192.168.1.254:3000
       - API_MATRIMONIO=http://192.168.1.254:3000
       - API_DIVORCIO=http://192.168.1.254:3000
     networks:
-      my_net_api_test:
-        ipv4_address: 172.19.0.6
+      my_net_git:
+        ipv4_address: 172.20.0.6
 
 volumes:
   postgres_volume:
