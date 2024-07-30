@@ -21,7 +21,7 @@ services:
         ipv4_address: 172.20.0.2
 
   img:
-    image: img:lts
+    image: image:latest
     container_name: imggit
     ports:
       - "3001:3000"
@@ -34,7 +34,7 @@ services:
         ipv4_address: 172.20.0.3
   
   identificador:
-    image: iden:lts
+    image: identificador:latest
     container_name: identificadorgit
     ports:
       - "8088:8087"
