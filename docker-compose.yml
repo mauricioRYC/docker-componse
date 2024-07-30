@@ -1,0 +1,68 @@
+version: '3.8'
+networks:
+  my_net_api_test:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+          gateway: 172.19.0.1
+
+services:
+  postgres-test:
+    image: postgres:latest
+    container_name: postgres-test
+    environment:
+      - POSTGRES_PASSWORD=mypassword
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    restart: always
+    networks:
+      my_net_api_test:
+        ipv4_address: 172.19.0.2
+
+  img:
+    image: img:lts
+    container_name: img
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+    restart: always
+    networks:
+      my_net_api_test:
+        ipv4_address: 172.19.0.3
+  
+  identificador:
+    image: iden:lts
+    container_name: identificador
+    ports:
+      - "8087:8087"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8087
+      - API_IMAGE=http://172.18.0.3:3000/api/service/image/translate
+      - CONCURRENCY_LIMIT=10
+      - ENTIDAD=32
+      - MUNICIPIO=001
+      - OFICIALIA=0001
+      - ANIO=2023
+      - START=0000001
+      - FINISH=0001000
+      - LIMIT_TIME=200800
+      - BOT="TESTEO XD"
+      - DB_DATABASE=identificador_test
+      - DB_HOST=172.19.0.2
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=mypassword
+      - API_NACIMIENTO=http://172.19.0.9:8090
+      - API_DEFUNCION=http://192.168.1.254:3000
+      - API_MATRIMONIO=http://192.168.1.254:3000
+      - API_DIVORCIO=http://192.168.1.254:3000
+    networks:
+      my_net_api_test:
+        ipv4_address: 172.19.0.6
+
+volumes:
+  postgres_volume:
