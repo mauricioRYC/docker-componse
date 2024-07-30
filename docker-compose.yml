@@ -24,7 +24,7 @@ services:
     image: img:lts
     container_name: imggit
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - PORT=3000
       - HOST=0.0.0.0
@@ -37,7 +37,7 @@ services:
     image: iden:lts
     container_name: identificadorgit
     ports:
-      - "8087:8087"
+      - "8088:8087"
     environment:
       - HOST=0.0.0.0
       - PORT=8087
