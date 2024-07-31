@@ -1,68 +1,49 @@
 version: '3.8'
 networks:
-  my_net_git:
+  my_net_bot:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
+        - subnet: 172.18.0.0/16
+          gateway: 172.18.0.1
 
 services:
-  postgres-test:
-    image: postgres:latest
-    container_name: postgres-test-git
+  imagen-captcha1:
+    image: image:latest
+    container_name: imagen-captcha1
+    ports:
+      - "9000:9000"  # Mapea el puerto 9000 del host al puerto 9000 del contenedor
     environment:
-      - POSTGRES_PASSWORD=mypassword
-    volumes:
-      - postgres_volume:/var/lib/postgresql/data
+      - PORT=9000
+      - HOST=0.0.0.0
     restart: always
     networks:
-      my_net_git:
-        ipv4_address: 172.20.0.2
+      my_net_bot:
+        ipv4_address: 172.18.0.2
 
-  img:
-    image: imagen:latest
-    container_name: imggit
-    ports:
-      - "3001:3000"
-    environment:
-      - PORT=3000
-      - HOST=0.0.0.0
-    restart: always
-    networks:
-      my_net_git:
-        ipv4_address: 172.20.0.3
-  
-  identificador:
+  identificador2:
     image: identificador:latest
-    container_name: identificador_pull_jenkins_OMG
-    ports:
-      - "8088:8087"
+    container_name: identificador2
+    restart: always
     environment:
       - HOST=0.0.0.0
-      - PORT=8087
-      - API_IMAGE=http://172.18.0.3:3000/api/service/image/translate
-      - CONCURRENCY_LIMIT=10
-      - ENTIDAD=32
-      - MUNICIPIO=001
-      - OFICIALIA=0001
+      - PORT=3002
+      - API_IMAGE=http://172.18.0.3:9001/api/service/image/translate
+      - CONCURRENCY_LIMIT=15
+      - RETRIES=100
+      - ENTIDAD=30
       - ANIO=2023
       - START=0000001
-      - FINISH=0001000
-      - LIMIT_TIME=200800
-      - BOT="TESTEO XD"
-      - DB_DATABASE=identificador_test
-      - DB_HOST=192.168.1.129
+      - FINISH=0099999
+      - DB_DATABASE=identificadores
+      - DB_HOST=192.168.1.120
       - DB_PORT=5432
       - DB_USERNAME=postgres
-      - DB_PASSWORD=passwordmio
-      - API_NACIMIENTO=http://172.20.0.9:8090
-      - API_DEFUNCION=http://192.168.1.254:3000
-      - API_MATRIMONIO=http://192.168.1.254:3000
-      - API_DIVORCIO=http://192.168.1.254:3000
+      - DB_PASSWORD=password
+      - DB_STORE=folios
+      - BOT_ID=8
+    ports:
+      - "3002:3002"
     networks:
-      my_net_git:
-        ipv4_address: 172.20.0.6
-
-volumes:
-  postgres_volume:
+      my_net_bot:
+        ipv4_address: 172.18.0.5
