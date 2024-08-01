@@ -9,7 +9,7 @@ networks:
 
 services:
   imagen-captcha1:
-    image: image:latest
+    image: imagen:latest
     container_name: imagen-captcha1
     ports:
       - "9000:9000"  # Mapea el puerto 9000 del host al puerto 9000 del contenedor
