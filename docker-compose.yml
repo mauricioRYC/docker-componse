@@ -12,7 +12,7 @@ services:
     image: imagen:latest
     container_name: imagen-captcha1
     ports:
-      - "9000:9000"  # Mapea el puerto 9000 del host al puerto 9000 del contenedor
+      - "9000:9000"
     environment:
       - PORT=9000
       - HOST=0.0.0.0
@@ -25,7 +25,7 @@ services:
     image: imagen:latest
     container_name: imagen-captcha2
     ports:
-      - "9001:9001"  # Mapea el puerto 9001 del host al puerto 9001 del contenedor
+      - "9001:9001"
     environment:
       - PORT=9001
       - HOST=0.0.0.0
@@ -63,6 +63,7 @@ services:
       - STATUSBOT=bot1
     volumes:
       - identificador1_data:/data
+      - /path/on/host:/app/status  # Añade esta línea para montar un volumen compartido
 
   identificador2:
     image: identificador:latest
@@ -93,6 +94,7 @@ services:
       - STATUSBOT=bot2
     volumes:
       - identificador2_data:/data
+      - /path/on/host:/app/status  # Añade esta línea para montar un volumen compartido
 
 volumes:
   identificador1_data:
