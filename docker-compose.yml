@@ -63,7 +63,7 @@ services:
       - STATUSBOT=bot1
     volumes:
       - identificador1_data:/data
-      - /path/on/host:/app/status  # Añade esta línea para montar un volumen compartido
+      - /path/on/host:/app/
 
   identificador2:
     image: identificador:latest
@@ -94,7 +94,7 @@ services:
       - STATUSBOT=bot2
     volumes:
       - identificador2_data:/data
-      - /path/on/host:/app/status  # Añade esta línea para montar un volumen compartido
+      - /path/on/host:/app/
 
 volumes:
   identificador1_data:
