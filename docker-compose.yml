@@ -10,7 +10,7 @@ networks:
 services:
   imagen-captcha1:
     image: imagen:latest
-    container_name: imagen-captcha1
+    container_name: imagen-captcha_test1
     ports:
       - "9000:9000"
     environment:
@@ -23,7 +23,7 @@ services:
 
   imagen-captcha2:
     image: imagen:latest
-    container_name: imagen-captcha2
+    container_name: imagen-captcha_test2
     ports:
       - "9001:9001"
     environment:
@@ -36,7 +36,7 @@ services:
 
   identificador1:
     image: identificador:latest
-    container_name: identificador1
+    container_name: identificador_test1
     restart: always
     ports:
       - "3001:3001"
@@ -67,7 +67,7 @@ services:
 
   identificador2:
     image: identificador:latest
-    container_name: identificador2
+    container_name: identificador_test2
     restart: always
     ports:
       - "3002:3002"
