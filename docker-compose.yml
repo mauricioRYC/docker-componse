@@ -12,9 +12,9 @@ services:
     image: imagen:latest
     container_name: imagen-captcha_test1
     ports:
-      - "9000:9000"
+      - "9012:9012"
     environment:
-      - PORT=9000
+      - PORT=9012
       - HOST=0.0.0.0
     restart: always
     networks:
@@ -25,9 +25,9 @@ services:
     image: imagen:latest
     container_name: imagen-captcha_test2
     ports:
-      - "9001:9001"
+      - "9011:9011"
     environment:
-      - PORT=9001
+      - PORT=9011
       - HOST=0.0.0.0
     restart: always
     networks:
@@ -39,14 +39,14 @@ services:
     container_name: identificador_test1
     restart: always
     ports:
-      - "3001:3001"
+      - "9013:9013"
     networks:
       my_net_bot_test:
         ipv4_address: 172.16.0.5
     environment:
       - HOST=0.0.0.0
-      - PORT=3001
-      - API_IMAGE=http://172.16.0.2:9000/api/service/image/translate
+      - PORT=9013
+      - API_IMAGE=http://172.16.0.2:9012/api/service/image/translate
       - CONCURRENCY_LIMIT=15
       - RETRIES=100
       - ENTIDAD=30
@@ -70,14 +70,14 @@ services:
     container_name: identificador_test2
     restart: always
     ports:
-      - "3002:3002"
+      - "9014:9014"
     networks:
       my_net_bot_test:
         ipv4_address: 172.16.0.6
     environment:
       - HOST=0.0.0.0
-      - PORT=3002
-      - API_IMAGE=http://172.16.0.3:9001/api/service/image/translate
+      - PORT=9014
+      - API_IMAGE=http://172.16.0.3:9011/api/service/image/translate
       - CONCURRENCY_LIMIT=15
       - RETRIES=100
       - ENTIDAD=30
