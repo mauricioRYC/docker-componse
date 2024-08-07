@@ -1,6 +1,6 @@
 version: '3.8'
 networks:
-  my_net_bot:
+  my_net_bot_test:
     driver: bridge
     ipam:
       config:
@@ -18,7 +18,7 @@ services:
       - HOST=0.0.0.0
     restart: always
     networks:
-      my_net_bot:
+      my_net_bot_test:
         ipv4_address: 172.19.0.2
 
   imagen-captcha2:
@@ -31,7 +31,7 @@ services:
       - HOST=0.0.0.0
     restart: always
     networks:
-      my_net_bot:
+      my_net_bot_test:
         ipv4_address: 172.19.0.3
 
   identificador1:
@@ -41,7 +41,7 @@ services:
     ports:
       - "3001:3001"
     networks:
-      my_net_bot:
+      my_net_bot_test:
         ipv4_address: 172.19.0.5
     environment:
       - HOST=0.0.0.0
@@ -72,7 +72,7 @@ services:
     ports:
       - "3002:3002"
     networks:
-      my_net_bot:
+      my_net_bot_test:
         ipv4_address: 172.19.0.6
     environment:
       - HOST=0.0.0.0
