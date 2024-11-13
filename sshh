@@ -1,0 +1,363 @@
+import subprocess
+import paramiko
+import os
+import re
+import getpass
+import socket
+import ctypes
+import sys
+from tqdm import tqdm
+import time
+
+PUBLIC_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDF9cg9UrcwBfCLm9RHG1Q5WMA3kupzn8/qjDJ1glsXm+4ovW78fB7ZfapoAUMLTZvMygO72hWXgv5Rr1v5UN8soUro5a7hwsJKYiai6TvvOraGYA14ZS5uDNDYudGrurtiJvlZj0SC5NQdf9K/M5bVGf2sR/ZI4NKUyTLFSgrOQzfquI+rJ987Z4llii0CgBsRm6JiBICP1dh9O2Wq22hVJ5K54qxFEcVmz/lAP22dC7HYcIZJE7JvxAN86JmQTIsh8qa3J8QOPIrNTWKIEfcfQHynuXzSwcARsUUePpRNxmnZyLq+vNMRifUzExtGMCMQfu6rZ5TzJOj7b9kwPCLIfCqzu/bTZMvvTz18I8yczefb6gD76kOHdHoGhQiD5Yh+vtXxW3V0Vc1dA80fAbWechtwAQ5VoFdkqL1/FOOXc0QcE+2K8yIgHthfdWKrpixknEv02heTB4uPcfHNHTx9vR19xyfHgs7BxX1iry92/xBagUiX459LppBcoMU4kVTrnb0snlFqUm73WBys3aTdRqRmNcH447hneP1sJjAq2rhMjZSKxWb0uD2LvMgL7kbPWFF/My9nXSL4rL2tfuDjXYFPzAxmr5bKMFI38FxrNeqxEz/wgDTSU6gh6Q2NAmLcpqSaITra2qQfJPtXXWSS8iJfIB7mKXwD/m07f+ojLw== comentario"
+
+
+def getUser():
+    return getpass.getuser()  # Devuelve el nombre del usuario sin comillas
+
+
+def run_as_admin():
+    if ctypes.windll.shell32.IsUserAnAdmin():
+        return True
+
+    print("Elevando a modo administrador...")
+    ctypes.windll.shell32.ShellExecuteW(
+        None, "runas", sys.executable, " ".join(sys.argv), None, 1
+    )
+    return False
+
+
+def check_openssh_installed():
+    try:
+        result = subprocess.run(
+            ["ssh", "-V"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            print(f"OpenSSH ya está instalado: {result.stdout.strip()}")
+            return True
+        print("OpenSSH no está instalado.")
+        return False
+    except FileNotFoundError:
+        print("El comando 'ssh' no se encontró. OpenSSH no está instalado.")
+        return False
+
+
+def install_openssh():
+    component_map = {
+        "Client": "OpenSSH.Client~~~~0.0.1.0",
+        "Server": "OpenSSH.Server~~~~0.0.1.0",
+    }
+
+    # Lista de componentes a instalar
+    components = ["Client", "Server"]
+
+    for component in components:
+        print(f"Iniciando instalación de {component}...")
+
+        # Construir el comando de instalación
+        command = (
+            f"Start-Process powershell -ArgumentList '-Command Add-WindowsCapability -Online -Name {component_map[component]}' "
+            "-WindowStyle Hidden -Verb RunAs"
+        )
+
+        try:
+            # Ejecutar el comando de instalación
+            process = subprocess.Popen(
+                f"powershell.exe {command}",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            stdout, stderr = process.communicate()
+
+            # Verificar el resultado del proceso
+            if process.returncode == 0:
+                print(f"Instalación de OpenSSH {component} completada correctamente.")
+                print(stdout)
+            else:
+                print(f"Error al instalar OpenSSH {component}: {stderr}")
+
+        except Exception as e:
+            print(f"Ocurrió un error al intentar instalar OpenSSH {component}: {e}")
+
+
+def check_port_open(port):
+    # Verificar si ya existe una regla para el puerto
+    command = (
+        f'netsh advfirewall firewall show rule name=all | findstr /i "localport={port}"'
+    )
+    result = subprocess.run(
+        command, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+
+    # Si el comando encuentra una coincidencia, el puerto ya está abierto
+    if result.returncode == 0:
+        return True
+    else:
+        return False
+
+
+def open_firewall_port(ports=[22, 8080, 2222]):
+    try:
+        for port in ports:
+            if check_port_open(port):
+                print(f"Puerto {port} ya esta abierto.")
+            else:
+                # Construir el comando de manera correcta, usando comillas apropiadas
+                command = f'netsh advfirewall firewall add rule name="Abrir puerto {port}" dir=in action=allow protocol=TCP localport={port}'
+
+                # Ejecutar el comando
+                subprocess.run(
+                    command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                print(f"Puerto {port} abierto exitosamente.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error al abrir puerto: {e.stderr.decode()}")
+
+
+def copy_ssh_key_server_to_client():
+    remote_user = "sistemasmatuz"
+    remote_host = "189.129.120.229"
+    port = 8080
+    password = "MAO793#BK77ryc"
+    public_key_path = os.path.expanduser("~\\.ssh\\id_rsa.pub")
+    with open(public_key_path, "r") as pubkey_file:
+        public_key = pubkey_file.read()
+    print(f"Public key {public_key}")
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh.connect(remote_host, port=port, username=remote_user, password=password)
+        command = f'echo "{public_key}" >> ~/.ssh/authorized_keys'
+        ssh.exec_command(command)
+        print("Clave SSH copiada exitosamente al servidor.")
+    except Exception as e:
+        print(f"Error al copiar la clave SSH al servidor: {e}")
+    finally:
+        ssh.close()
+
+
+def generate_authorized_keys():
+    try:
+        user = (
+            getUser()
+        )  # Asegúrate de que `getUser()` esté definido y funcione correctamente.
+        ssh_dir = f"C:\\Users\\{user}\\.ssh"
+        authorized_keys_path = os.path.join(ssh_dir, "authorized_keys")
+
+        if not os.path.exists(ssh_dir):
+            os.makedirs(ssh_dir)
+            print(f"Directorio {ssh_dir} creado.")
+
+        with open(authorized_keys_path, "a") as file:
+            file.write(f"{PUBLIC_KEY}\n")
+            print(f"Clave publica añadida a {authorized_keys_path}.")
+        configure_authorized_keys_security()
+    except Exception as e:
+        print(f"Error al generar claves autorizadas: {str(e)}")
+
+
+def configure_authorized_keys_security():
+    user = (
+        os.getlogin()
+    )  # Cambia getUser() por os.getlogin() para obtener el usuario actual
+    ssh_dir = f"C:\\Users\\{user}\\.ssh"
+    authorized_keys_path = os.path.join(ssh_dir, "authorized_keys")
+
+    # Verificar si el archivo authorized_keys existe y crearlo si no
+    if not os.path.exists(authorized_keys_path):
+        os.makedirs(ssh_dir, exist_ok=True)
+        with open(authorized_keys_path, "w") as f:
+            f.write("")  # Crear archivo vacío
+
+    try:
+        # Desactivar la herencia de permisos
+        subprocess.run(["icacls", authorized_keys_path, "/inheritance:d"], check=True)
+
+        # Intentar eliminar permisos para "Administrators" y luego para "Administradores" si falla
+        try:
+            subprocess.run(
+                ["icacls", authorized_keys_path, "/remove", "Administrators"],
+                check=True,
+            )
+            print("Permisos eliminados para 'Administrators'.")
+        except subprocess.CalledProcessError:
+            try:
+                subprocess.run(
+                    ["icacls", authorized_keys_path, "/remove", "Administradores"],
+                    check=True,
+                )
+                print("Permisos eliminados para 'Administradores'.")
+            except subprocess.CalledProcessError:
+                print(
+                    "No se encontraron permisos para 'Administrators' ni 'Administradores'."
+                )
+
+        # Configurar propietario usando PowerShell
+        set_owner_cmd = (
+            f'$acl = Get-Acl "{authorized_keys_path}"; '
+            f'$acl.SetOwner([System.Security.Principal.NTAccount]"SYSTEM"); '
+            f'Set-Acl -Path "{authorized_keys_path}" -AclObject $acl'
+        )
+        subprocess.run(["powershell", "-Command", set_owner_cmd], check=True)
+
+        print("Permisos configurados en authorized_keys.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error al configurar seguridad en authorized_keys: {e}")
+        return False
+
+
+def ssh_reverso():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip_local = s.getsockname()[0]
+        s.close()
+        command = f"ssh -p 8080 -R 2222:{ip_local}:22 sistemasmatuz@189.129.120.229"
+        result = subprocess.run(
+            command,
+            shell=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if result.returncode == 0:
+            print("Conexión SSH reversa establecida exitosamente.")
+        else:
+            print(f"Error al establecer la conexión SSH reversa: {result.stderr}")
+    except Exception as e:
+        print(f"Ocurrió un error al intentar establecer el túnel SSH reverso: {e}")
+
+
+def generate_ssh_key():
+    ssh_dir = os.path.expanduser("~/.ssh")
+    private_key_path = os.path.join(ssh_dir, "id_rsa")
+
+    if not os.path.exists(private_key_path):
+        os.makedirs(ssh_dir, exist_ok=True)
+
+        # Separar los argumentos en una lista
+        command = [
+            "ssh-keygen",
+            "-t",
+            "rsa",
+            "-b",
+            "4096",
+            "-f",
+            private_key_path,
+            "-N",
+            "",
+        ]
+
+        try:
+            result = subprocess.run(
+                command,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            print(f"Clave SSH generada: {result.stdout}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error al generar clave SSH: {e.stderr}")
+    else:
+        print(f"La clave SSH ya existe en {private_key_path}.")
+
+
+def restart_ssh_service():
+    try:
+        result = subprocess.run(
+            ["powershell.exe", "-Command", "Restart-Service sshd"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        print(f"Servicio SSH reiniciado: {result.stdout}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error al reiniciar el servicio SSH: {e.stderr}")
+
+
+def edit_sshd_config():
+    sshd_config_path = r"C:\ProgramData\ssh\sshd_config"
+    try:
+        with open(sshd_config_path, "r") as file:
+            lines = file.readlines()
+
+        with open(sshd_config_path, "w") as file:
+            for line in lines:
+                # Configura PubkeyAuthentication a yes
+                if re.match(r"^#?PubkeyAuthentication\s+.*", line):
+                    file.write("PubkeyAuthentication yes\n")
+                # Configura PasswordAuthentication a no
+                elif re.match(r"^#?PasswordAuthentication\s+.*", line):
+                    file.write("PasswordAuthentication no\n")
+                # Comenta la línea que contiene Match Group administrators
+                elif re.match(r"^Match Group administrators", line):
+                    file.write("#" + line)
+                # Comenta la línea que contiene AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys
+                elif (
+                    "AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys"
+                    in line
+                ):
+                    file.write("#" + line)
+                # Para todas las demás líneas, las dejamos tal cual están
+                else:
+                    file.write(line)
+
+        print("Configuración de sshd_config actualizada.")
+    except Exception as e:
+        print(f"Error al editar sshd_config: {str(e)}")
+
+
+def start_sshd_service():
+    try:
+        # Inicia el servicio sshd
+        subprocess.run(["powershell", "-Command", "Start-Service", "sshd"], check=True)
+        print("Servicio sshd iniciado.")
+
+        # Configura el servicio sshd para que se inicie automáticamente
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                "Set-Service",
+                "-Name",
+                "sshd",
+                "-StartupType",
+                "Automatic",
+            ],
+            check=True,
+        )
+        print("Configuración de inicio automático aplicada.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error al iniciar o configurar el servicio sshd: {e}")
+
+
+def main():
+    try:
+        print("Script de configuración de SSH en Windows.")
+
+        # Verifica si el script se ejecuta como administrador
+        if run_as_admin():
+            print("SI SE EJECUTO :D")
+            if not check_openssh_installed():
+                install_openssh()
+            open_firewall_port([22, 8080, 2223])
+            generate_authorized_keys()
+            generate_ssh_key()
+            copy_ssh_key_server_to_client()
+            start_sshd_service()
+            edit_sshd_config()
+            restart_ssh_service()
+            input("Presiona Enter para salir...")
+
+    except Exception as e:
+        print(f"Error en el flujo principal: {str(e)}")
+
+
+if __name__ == "__main__":
+    main()
